@@ -24,12 +24,18 @@ dependencies {
 
 paperweight {
     minecraftVersion = providers.gradleProperty("mcVersion")
+    mainClass = "net.minecraft.server.Main"
+    bundlerJarName = "vanillafork"
     gitFilePatches = false
 
     spigot {
         enabled = false
 //        buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
         packageVersion = "anything_i_do_not_care_work_around_paperweight_bug" // also needs to be updated in MappingEnvironment
+    }
+
+    paper {
+        paperServerDir.set(objects.dirFrom(rootDirectory, "vanillafork-server"))
     }
 
 //    reobfPackagesToFix.addAll(
@@ -190,14 +196,14 @@ dependencies {
 
 tasks.jar {
     manifest {
-        val git = Git(rootProject.layout.projectDirectory.path)
-        val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
-        val build = System.getenv("BUILD_NUMBER") ?: null
-        val buildTime = if (build != null) Instant.now() else Instant.EPOCH
-        val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
-        val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
-        val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim()
-        val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
+//        val git = Git(rootProject.layout.projectDirectory.path)
+//        val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
+//        val build = System.getenv("BUILD_NUMBER") ?: null
+//        val buildTime = if (build != null) Instant.now() else Instant.EPOCH
+//        val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
+//        val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
+//        val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim()
+//        val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
 
         // versioning attributes etc
         // vanilla -> base impl (1.21.8)
@@ -205,19 +211,19 @@ tasks.jar {
         // vanillafork-server -> impl versioning -> the minecraft version + api version it implements, and a build number
 
         attributes(
-//            "Main-Class" to "org.bukkit.craftbukkit.Main",
+//            "Main-Class" to "net.minecraft.server.Main",
 //            "Implementation-Title" to "Paper",
-            "Implementation-Version" to implementationVersion,
-            "Implementation-Vendor" to date,
+//            "Implementation-Version" to implementationVersion,
+//            "Implementation-Vendor" to date,
 //            "Specification-Title" to "Paper",
-            "Specification-Version" to project.version,
+//            "Specification-Version" to project.version,
 //            "Specification-Vendor" to "Paper Team",
 //            "Brand-Id" to "papermc:paper",
 //            "Brand-Name" to "Paper",
 //            "Build-Number" to (build ?: ""),
-            "Build-Time" to buildTime.toString(),
-            "Git-Branch" to gitBranch,
-            "Git-Commit" to gitHash,
+//            "Build-Time" to buildTime.toString(),
+//            "Git-Branch" to gitBranch,
+//            "Git-Commit" to gitHash,
         )
 //        for (tld in setOf("net", "com", "org")) {
 //            attributes("$tld/bukkit", "Sealed" to true)
@@ -298,83 +304,93 @@ if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()
 //    }
 }
 
-//fun TaskContainer.registerRunTask(
-//    name: String,
-//    block: JavaExec.() -> Unit
-//): TaskProvider<JavaExec> = register<JavaExec>(name) {
-//    group = "runs"
-//    mainClass.set("org.bukkit.craftbukkit.Main")
-//    standardInput = System.`in`
-//    workingDir = rootProject.layout.projectDirectory
-//        .dir(providers.gradleProperty("paper.runWorkDir").getOrElse("run"))
-//        .asFile
-//    javaLauncher.set(project.javaToolchains.launcherFor {
-//        languageVersion.set(JavaLanguageVersion.of(21))
-//        vendor.set(JvmVendorSpec.JETBRAINS)
-//    })
-//    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
-//
+fun TaskContainer.registerRunTask(
+    name: String,
+    block: JavaExec.() -> Unit
+): TaskProvider<JavaExec> = register<JavaExec>(name) {
+    group = "runs"
+    mainClass.set("net.minecraft.server.Main")
+    standardInput = System.`in`
+    workingDir = rootProject.layout.projectDirectory
+        .dir(providers.gradleProperty("paper.runWorkDir").getOrElse("run"))
+        .asFile
+    javaLauncher.set(project.javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(21))
+        vendor.set(JvmVendorSpec.JETBRAINS)
+    })
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+
 //    if (rootProject.childProjects["test-plugin"] != null) {
 //        val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
 //        inputs.file(testPluginJar)
 //        args("-add-plugin=${testPluginJar.get().asFile.absolutePath}")
 //    }
 //
-//    args("--nogui")
+    args("--nogui")
 //    systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
 //    if (providers.gradleProperty("paper.runDisableWatchdog").getOrElse("false") == "true") {
 //        systemProperty("disable.watchdog", true)
 //    }
 //    systemProperty("io.papermc.paper.suppress.sout.nags", true)
 //
-//    val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
-//    minHeapSize = "${memoryGb}G"
-//    maxHeapSize = "${memoryGb}G"
-//
-//    doFirst {
-//        workingDir.mkdirs()
-//    }
-//
-//    block(this)
-//}
-//
-//tasks.registerRunTask("runServer") {
-//    description = "Spin up a test server from the Mojang mapped server jar"
+    val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
+    minHeapSize = "${memoryGb}G"
+    maxHeapSize = "${memoryGb}G"
+
+    doFirst {
+        workingDir.mkdirs()
+    }
+
+    block(this)
+}
+
+
+tasks.registerRunTask("runServer") {
+    description = "Spin up a test server from the Mojang mapped server jar"
+//    dont try and include reobf mappings from spigot into the jar
 //    classpath(tasks.includeMappings.flatMap { it.outputJar })
-//    classpath(configurations.runtimeClasspath)
-//}
-//
+    classpath(tasks.jar.flatMap { it.archiveFile })
+    classpath(configurations.runtimeClasspath)
+}
+
+// broken, needs a spigot base?
 //tasks.registerRunTask("runReobfServer") {
 //    description = "Spin up a test server from the reobfJar output jar"
 //    classpath(tasks.reobfJar.flatMap { it.outputJar })
 //    classpath(configurations.runtimeClasspath)
 //}
-//
-//tasks.registerRunTask("runDevServer") {
-//    description = "Spin up a test server without assembling a jar"
-//    classpath(sourceSets.main.map { it.runtimeClasspath })
-//}
-//
-//tasks.registerRunTask("runBundler") {
-//    description = "Spin up a test server from the Mojang mapped bundler jar"
-//    classpath(tasks.createMojmapBundlerJar.flatMap { it.outputZip })
-//    mainClass.set(null as String?)
-//}
+
+tasks.registerRunTask("runDevServer") {
+    description = "Spin up a test server without assembling a jar"
+    classpath(sourceSets.main.map { it.runtimeClasspath })
+}
+
+tasks.registerRunTask("runBundler") {
+    description = "Spin up a test server from the Mojang mapped bundler jar"
+    classpath(tasks.createMojmapBundlerJar.flatMap { it.outputZip })
+    mainClass.set(null as String?)
+}
+
+// broken, needs a spigot base?
 //tasks.registerRunTask("runReobfBundler") {
 //    description = "Spin up a test server from the reobf bundler jar"
 //    classpath(tasks.createReobfBundlerJar.flatMap { it.outputZip })
 //    mainClass.set(null as String?)
 //}
-//tasks.registerRunTask("runPaperclip") {
-//    description = "Spin up a test server from the Mojang mapped Paperclip jar"
-//    classpath(tasks.createMojmapPaperclipJar.flatMap { it.outputZip })
-//    mainClass.set(null as String?)
-//}
+
+tasks.registerRunTask("runPaperclip") {
+    description = "Spin up a test server from the Mojang mapped Paperclip jar"
+    classpath(tasks.createMojmapPaperclipJar.flatMap { it.outputZip })
+    mainClass.set(null as String?)
+}
+
+// broken, needs a spigot base?
 //tasks.registerRunTask("runReobfPaperclip") {
 //    description = "Spin up a test server from the reobf Paperclip jar"
 //    classpath(tasks.createReobfPaperclipJar.flatMap { it.outputZip })
 //    mainClass.set(null as String?)
 //}
+
 //
 //fill {
 //    project("paper")
