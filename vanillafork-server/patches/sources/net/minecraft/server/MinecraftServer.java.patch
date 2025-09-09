@@ -1,0 +1,11 @@
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1171,7 +_,7 @@
+ 
+     @DontObfuscate
+     public String getServerModName() {
+-        return "vanilla";
++        return "vanillafork";
+     }
+ 
+     public SystemReport fillSystemReport(SystemReport systemReport) {
